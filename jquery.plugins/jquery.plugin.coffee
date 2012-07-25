@@ -1,6 +1,6 @@
 #  Project: 
 #  Description:
-#  Author: 
+#  Author: Jakub Alkagar Mrowiec
 #  License:
 (($, window) ->
     # Create the defaults once
@@ -20,11 +20,15 @@
 
         init: ->
             # Place initialization logic here
+            $(@).each ->
+                # Enable options and Plugin class in anonymous function scope
+                options = @options
+                self = @
 
-        # A really lightweight plugin wrapper around the constructor,
-        # preventing against multiple instantiations
-        $.fn[pluginName] = (options = {}) ->
-            @each ->
-                if !$.data(this, "plugin_#{pluginName}")
-                    $.data(@, "plugin_#{pluginName}", new Plugin(@, options))
+    # A really lightweight plugin wrapper around the constructor,
+    # preventing against multiple instantiations
+    $.fn[pluginName] = (options = {}) ->
+        @each ->
+            if !$.data(this, "plugin_#{pluginName}")
+                $.data($(@), "plugin_#{pluginName}", new Plugin($(@), options))
 )(jQuery, window)
