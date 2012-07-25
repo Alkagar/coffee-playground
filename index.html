@@ -24,6 +24,9 @@
     <div class='a-hider-button'>pokaz </div>
 </div>
 <script type='text/javascript'>
+    String.prototype.trim = function () {
+            return this.replace(/^\s*/, "").replace(/\s*$/, "");
+    }
     $('.cos').AHider({
 showText : '[ czytaj więcej ]',
 hideText : '[ schowaj ]'
