@@ -1,13 +1,20 @@
-#  Project: 
+#  Project: AHider - jQuery hiding plugin
 #  Description:
-#  Author: 
-#  License:
+#  Author: Jakub Alkagar Mrowiec
+#
+
 (($, window) ->
     # Create the defaults once
-    pluginName = 'yourPluginName'
+    pluginName = 'AHider'
     document = window.document
     defaults =
-        defaultValue = 'value'
+        showText                : '[ show ]'
+        hideText                : '[ hide ]'
+        toggleButtonClass       : 'a-hider-button'
+        toggleBoxClass          : 'a-hider-box'
+        defaultState            : 'hidden' # visible|hidden
+        hiddenClass             : 'a-hider-hidden'
+        visibleClass            : 'a-hider-visible'
 
     # The actual plugin constructor
     class Plugin
@@ -19,12 +26,38 @@
             @init()
 
         init: ->
+            $(@).each ->
+                options = @options
+
+                container = @element
+                toggleButton = container.find('.' + options.toggleButtonClass)
+                toggleButton.css 'cursor', 'pointer'
+
+                toggleBox = container.find '.' + options.toggleBoxClass
+                if options.defaultState is 'hidden'
+                    toggleButton.addClass(options.hiddenClass).text(options.showText)
+                    toggleBox.hide()
+                else
+                    toggleButton.addClass(options.visibleClass).text(options.hideText)
+                    toggleBox.show()
+
+
+                toggleButton.on 'click', () ->
+                    console.log toggleBox
+                    toggleBox = $(@).siblings('.' + options.toggleBoxClass)
+                    console.log toggleBox
+                    toggleBox.toggle 'slow'
+                    $(@).toggleClass(options.hiddenClass).toggleClass(options.visibleClass)
+                    if $(@).is('.' + options.hiddenClass)
+                        $(@).text options.showText
+                    else
+                        $(@).text options.hideText
+
             # Place initialization logic here
 
         # A really lightweight plugin wrapper around the constructor,
         # preventing against multiple instantiations
-        $.fn[pluginName] = (options = {}) ->
-            @each ->
-                if !$.data(this, "plugin_#{pluginName}")
-                    $.data(@, "plugin_#{pluginName}", new Plugin(@, options))
+    $.fn[pluginName] = (options = {}) ->
+        if !$.data(this, "plugin_#{pluginName}")
+            $.data(@, "plugin_#{pluginName}", new Plugin(@, options))
 )(jQuery, window)
