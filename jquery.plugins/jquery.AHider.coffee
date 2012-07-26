@@ -16,6 +16,9 @@
         hiddenClass             : 'a-hider-hidden'
         visibleClass            : 'a-hider-visible'
 
+        visibleWords            : 15
+        animationTime           : 2000
+
     # The actual plugin constructor
     class Plugin
         constructor: (@element, options = {}) ->
@@ -23,7 +26,17 @@
             @options = $.extend {}, defaults, options
             @_defaults = defaults
             @_name = pluginName
+            @_visibleText = ''
+            @_hiddenText = ''
+            @_originalText = ''
             @init()
+
+        _prepareText: (text) ->
+            options = @options
+            self = @
+            @_visibleText = text.trim().split(' ').slice(0, options.visibleWords).join(' ')
+            @_hiddenText = text.trim().split(' ').slice(options.visibleWords).join(' ')
+            @_originalText = text
         
         init: ->
             $(@).each ->
@@ -35,26 +48,41 @@
                 toggleButton.css 'cursor', 'pointer'
 
                 toggleBox = container.find '.' + options.toggleBoxClass
+                @._prepareText(toggleBox.text())
+                visibleText = $('<span/>').text(@_visibleText)
+                hiddenText = $('<span/>').text(@_hiddenText)
+                originalText = $('<div/>').text(@_originalText)
+
+                toggleBox.text('').append(originalText)
+                textHeight = container.outerHeight(true) + 10
+                alert(textHeight)
+                originalText.hide()
+                    
+                toggleBox.append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden')
 
                 if options.defaultState is 'hidden'
                     toggleButton.addClass(options.hiddenClass).text(options.showText)
-                    toggleBox.hide()
+                    hiddenText.hide()
                 else
                     toggleButton.addClass(options.visibleClass).text(options.hideText)
-                    toggleBox.show()
-
+                    hiddenText.show()
 
                 toggleButton.on 'click', () ->
                     toggleBox = $(@).siblings('.' + options.toggleBoxClass)
                     $(@).toggleClass(options.hiddenClass).toggleClass(options.visibleClass)
-                    toggleBox.toggle 'slow'
+                    #hiddenText.slideToggle 1500, 'linear'
                     if $(@).is('.' + options.hiddenClass)
                         $(@).text options.showText
+                        toggleBox.animate {height:visibleText.height()}, options.animationTime, () ->
+                            hiddenText.hide()
                     else
                         $(@).text options.hideText
+                        hiddenText.show()
+                        toggleBox.css('height', visibleText.height()).animate({height:textHeight}, options.animationTime)
 
 
-            # Place initialization logic here
+
+# Place initialization logic here
 
         # A really lightweight plugin wrapper around the constructor,
         # preventing against multiple instantiations
