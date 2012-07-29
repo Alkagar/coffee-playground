@@ -15,9 +15,11 @@
         defaultState            : 'hidden' # visible|hidden
         hiddenClass             : 'a-hider-hidden'
         visibleClass            : 'a-hider-visible'
-
+        easing                  : 'swing'
         visibleWords            : 15
         animationTime           : 2000
+        onCompleteHide          : () ->
+        onCompleteShow          : () ->
 
     # The actual plugin constructor
     class Plugin
@@ -49,16 +51,12 @@
 
                 toggleBox = container.find '.' + options.toggleBoxClass
                 @._prepareText(toggleBox.text())
+
                 visibleText = $('<span/>').text(@_visibleText)
                 hiddenText = $('<span/>').text(@_hiddenText)
-                originalText = $('<div/>').text(@_originalText)
 
-                toggleBox.text('').append(originalText)
-                textHeight = container.outerHeight(true) + 10
-                alert(textHeight)
-                originalText.hide()
-                    
-                toggleBox.append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden')
+                textHeight = toggleBox.height()
+                toggleBox.text('').append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden')
 
                 if options.defaultState is 'hidden'
                     toggleButton.addClass(options.hiddenClass).text(options.showText)
@@ -70,19 +68,25 @@
                 toggleButton.on 'click', () ->
                     toggleBox = $(@).siblings('.' + options.toggleBoxClass)
                     $(@).toggleClass(options.hiddenClass).toggleClass(options.visibleClass)
-                    #hiddenText.slideToggle 1500, 'linear'
                     if $(@).is('.' + options.hiddenClass)
                         $(@).text options.showText
-                        toggleBox.animate {height:visibleText.height()}, options.animationTime, () ->
-                            hiddenText.hide()
+                        # when sliding is finished hide hiddenText to remove rest of visible line
+                        toggleBox.animate {height:visibleText.height()},
+                            duration : options.animationTime
+                            complete : () ->
+                                hiddenText.hide()
+                                options.onCompleteHide()
+                            easing : options.easing
                     else
                         $(@).text options.hideText
                         hiddenText.show()
-                        toggleBox.css('height', visibleText.height()).animate({height:textHeight}, options.animationTime)
-
-
-
-# Place initialization logic here
+                        toggleBox.css('height', visibleText.height()).animate {height:textHeight},
+                            duration : options.animationTime
+                            complete : () ->
+                                options.onCompleteShow()
+                            easing : options.easing
+                            
+        # Place initialization logic here
 
         # A really lightweight plugin wrapper around the constructor,
         # preventing against multiple instantiations

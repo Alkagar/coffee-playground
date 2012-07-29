@@ -13,8 +13,11 @@
       defaultState: 'hidden',
       hiddenClass: 'a-hider-hidden',
       visibleClass: 'a-hider-visible',
+      easing: 'swing',
       visibleWords: 15,
-      animationTime: 2000
+      animationTime: 2000,
+      onCompleteHide: function() {},
+      onCompleteShow: function() {}
     };
     Plugin = (function() {
 
@@ -43,7 +46,7 @@
 
       Plugin.prototype.init = function() {
         return $(this).each(function() {
-          var container, hiddenText, options, originalText, self, textHeight, toggleBox, toggleButton, visibleText;
+          var container, hiddenText, options, self, textHeight, toggleBox, toggleButton, visibleText;
           options = this.options;
           self = this;
           container = this.element;
@@ -53,12 +56,8 @@
           this._prepareText(toggleBox.text());
           visibleText = $('<span/>').text(this._visibleText);
           hiddenText = $('<span/>').text(this._hiddenText);
-          originalText = $('<div/>').text(this._originalText);
-          toggleBox.text('').append(originalText);
-          textHeight = container.outerHeight(true) + 10;
-          alert(textHeight);
-          originalText.hide();
-          toggleBox.append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden');
+          textHeight = toggleBox.height();
+          toggleBox.text('').append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden');
           if (options.defaultState === 'hidden') {
             toggleButton.addClass(options.hiddenClass).text(options.showText);
             hiddenText.hide();
@@ -73,15 +72,26 @@
               $(this).text(options.showText);
               return toggleBox.animate({
                 height: visibleText.height()
-              }, options.animationTime, function() {
-                return hiddenText.hide();
+              }, {
+                duration: options.animationTime,
+                complete: function() {
+                  hiddenText.hide();
+                  return options.onCompleteHide();
+                },
+                easing: options.easing
               });
             } else {
               $(this).text(options.hideText);
               hiddenText.show();
               return toggleBox.css('height', visibleText.height()).animate({
                 height: textHeight
-              }, options.animationTime);
+              }, {
+                duration: options.animationTime,
+                complete: function() {
+                  return options.onCompleteShow();
+                },
+                easing: options.easing
+              });
             }
           });
         });
