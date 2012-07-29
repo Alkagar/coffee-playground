@@ -8,6 +8,7 @@
     defaults = {
       showText: '[ show ]',
       hideText: '[ hide ]',
+      moreSymbol: ' [...] ',
       toggleButtonClass: 'a-hider-button',
       toggleBoxClass: 'a-hider-box',
       defaultState: 'hidden',
@@ -17,22 +18,27 @@
       visibleWords: 15,
       animationTime: 2000,
       onCompleteHide: function() {},
-      onCompleteShow: function() {}
+      onCompleteShow: function() {},
+      fakeTextElement: '<span/>'
     };
     Plugin = (function() {
 
       function Plugin(element, options) {
+        var self;
         this.element = element;
         if (options == null) {
           options = {};
         }
+        self = this;
         this.options = $.extend({}, defaults, options);
         this._defaults = defaults;
         this._name = pluginName;
         this._visibleText = '';
         this._hiddenText = '';
         this._originalText = '';
-        this.init();
+        $(window).load(function() {
+          return self.init();
+        });
       }
 
       Plugin.prototype._prepareText = function(text) {
@@ -46,7 +52,7 @@
 
       Plugin.prototype.init = function() {
         return $(this).each(function() {
-          var container, hiddenText, options, self, textHeight, toggleBox, toggleButton, visibleText;
+          var container, hiddenText, moreSymbol, options, self, textHeight, toggleBox, toggleButton, visibleHeight, visibleText;
           options = this.options;
           self = this;
           container = this.element;
@@ -54,15 +60,19 @@
           toggleButton.css('cursor', 'pointer');
           toggleBox = container.find('.' + options.toggleBoxClass);
           this._prepareText(toggleBox.text());
-          visibleText = $('<span/>').text(this._visibleText);
-          hiddenText = $('<span/>').text(this._hiddenText);
+          visibleText = $(options.fakeTextElement).text(this._visibleText);
+          hiddenText = $(options.fakeTextElement).text(this._hiddenText);
+          moreSymbol = $(options.fakeTextElement).text(options.moreSymbol);
           textHeight = toggleBox.height();
-          toggleBox.text('').append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden');
+          visibleText.append(moreSymbol);
+          toggleBox.text('').append(visibleText).append(hiddenText).css('overflow', 'hidden');
+          visibleHeight = visibleText.height();
           if (options.defaultState === 'hidden') {
             toggleButton.addClass(options.hiddenClass).text(options.showText);
             hiddenText.hide();
           } else {
             toggleButton.addClass(options.visibleClass).text(options.hideText);
+            moreSymbol.text(' ');
             hiddenText.show();
           }
           return toggleButton.on('click', function() {
@@ -71,11 +81,12 @@
             if ($(this).is('.' + options.hiddenClass)) {
               $(this).text(options.showText);
               return toggleBox.animate({
-                height: visibleText.height()
+                height: visibleHeight
               }, {
                 duration: options.animationTime,
                 complete: function() {
                   hiddenText.hide();
+                  moreSymbol.text(options.moreSymbol);
                   return options.onCompleteHide();
                 },
                 easing: options.easing
@@ -83,7 +94,8 @@
             } else {
               $(this).text(options.hideText);
               hiddenText.show();
-              return toggleBox.css('height', visibleText.height()).animate({
+              moreSymbol.text(' ');
+              return toggleBox.css('height', visibleHeight).animate({
                 height: textHeight
               }, {
                 duration: options.animationTime,

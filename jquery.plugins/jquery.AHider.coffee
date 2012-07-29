@@ -10,6 +10,7 @@
     defaults =
         showText                : '[ show ]'
         hideText                : '[ hide ]'
+        moreSymbol              : ' [...] '
         toggleButtonClass       : 'a-hider-button'
         toggleBoxClass          : 'a-hider-box'
         defaultState            : 'hidden' # visible|hidden
@@ -21,17 +22,22 @@
         onCompleteHide          : () ->
         onCompleteShow          : () ->
 
+
+        fakeTextElement         : '<span/>'
+
     # The actual plugin constructor
     class Plugin
         constructor: (@element, options = {}) ->
             # Place your constructor here
+            self = @
             @options = $.extend {}, defaults, options
             @_defaults = defaults
             @_name = pluginName
             @_visibleText = ''
             @_hiddenText = ''
             @_originalText = ''
-            @init()
+            $(window).load () ->
+                self.init()
 
         _prepareText: (text) ->
             options = @options
@@ -52,17 +58,21 @@
                 toggleBox = container.find '.' + options.toggleBoxClass
                 @._prepareText(toggleBox.text())
 
-                visibleText = $('<span/>').text(@_visibleText)
-                hiddenText = $('<span/>').text(@_hiddenText)
+                visibleText = $(options.fakeTextElement).text(@_visibleText)
+                hiddenText = $(options.fakeTextElement).text(@_hiddenText)
+                moreSymbol = $(options.fakeTextElement).text(options.moreSymbol)
 
                 textHeight = toggleBox.height()
-                toggleBox.text('').append(visibleText).append(' ').append(hiddenText).css('overflow', 'hidden')
+                visibleText.append(moreSymbol)
+                toggleBox.text('').append(visibleText).append(hiddenText).css('overflow', 'hidden')
+                visibleHeight = visibleText.height();
 
                 if options.defaultState is 'hidden'
                     toggleButton.addClass(options.hiddenClass).text(options.showText)
                     hiddenText.hide()
                 else
                     toggleButton.addClass(options.visibleClass).text(options.hideText)
+                    moreSymbol.text(' ')
                     hiddenText.show()
 
                 toggleButton.on 'click', () ->
@@ -71,16 +81,18 @@
                     if $(@).is('.' + options.hiddenClass)
                         $(@).text options.showText
                         # when sliding is finished hide hiddenText to remove rest of visible line
-                        toggleBox.animate {height:visibleText.height()},
+                        toggleBox.animate {height:visibleHeight},
                             duration : options.animationTime
                             complete : () ->
                                 hiddenText.hide()
+                                moreSymbol.text(options.moreSymbol)
                                 options.onCompleteHide()
                             easing : options.easing
                     else
                         $(@).text options.hideText
                         hiddenText.show()
-                        toggleBox.css('height', visibleText.height()).animate {height:textHeight},
+                        moreSymbol.text(' ')
+                        toggleBox.css('height', visibleHeight).animate {height:textHeight},
                             duration : options.animationTime
                             complete : () ->
                                 options.onCompleteShow()
