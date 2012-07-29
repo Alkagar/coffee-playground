@@ -65,7 +65,7 @@
                 textHeight = toggleBox.height()
                 visibleText.append(moreSymbol)
                 toggleBox.text('').append(visibleText).append(hiddenText).css('overflow', 'hidden')
-                visibleHeight = visibleText.height();
+                visibleHeight = visibleText.height()
 
                 if options.defaultState is 'hidden'
                     toggleButton.addClass(options.hiddenClass).text(options.showText)
