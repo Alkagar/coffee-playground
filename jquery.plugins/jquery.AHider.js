@@ -8,49 +8,102 @@
     defaults = {
       showText: '[ show ]',
       hideText: '[ hide ]',
+      moreSymbol: ' [...] ',
       toggleButtonClass: 'a-hider-button',
       toggleBoxClass: 'a-hider-box',
       defaultState: 'hidden',
       hiddenClass: 'a-hider-hidden',
-      visibleClass: 'a-hider-visible'
+      visibleClass: 'a-hider-visible',
+      easing: 'swing',
+      visibleWords: 15,
+      animationTime: 2000,
+      onCompleteHide: function() {},
+      onCompleteShow: function() {},
+      fakeTextElement: '<span/>'
     };
     Plugin = (function() {
 
       function Plugin(element, options) {
+        var self;
         this.element = element;
         if (options == null) {
           options = {};
         }
+        self = this;
         this.options = $.extend({}, defaults, options);
         this._defaults = defaults;
         this._name = pluginName;
-        this.init();
+        this._visibleText = '';
+        this._hiddenText = '';
+        this._originalText = '';
+        $(window).load(function() {
+          return self.init();
+        });
       }
+
+      Plugin.prototype._prepareText = function(text) {
+        var options, self;
+        options = this.options;
+        self = this;
+        this._visibleText = text.trim().split(' ').slice(0, options.visibleWords).join(' ');
+        this._hiddenText = text.trim().split(' ').slice(options.visibleWords).join(' ');
+        return this._originalText = text;
+      };
 
       Plugin.prototype.init = function() {
         return $(this).each(function() {
-          var container, options, self, toggleBox, toggleButton;
+          var container, hiddenText, moreSymbol, options, self, textHeight, toggleBox, toggleButton, visibleHeight, visibleText;
           options = this.options;
           self = this;
           container = this.element;
           toggleButton = container.find('.' + options.toggleButtonClass);
           toggleButton.css('cursor', 'pointer');
           toggleBox = container.find('.' + options.toggleBoxClass);
+          this._prepareText(toggleBox.text());
+          visibleText = $(options.fakeTextElement).text(this._visibleText);
+          hiddenText = $(options.fakeTextElement).text(this._hiddenText);
+          moreSymbol = $(options.fakeTextElement).text(options.moreSymbol);
+          textHeight = toggleBox.height();
+          visibleText.append(moreSymbol);
+          toggleBox.text('').append(visibleText).append(hiddenText).css('overflow', 'hidden');
+          visibleHeight = visibleText.height();
           if (options.defaultState === 'hidden') {
             toggleButton.addClass(options.hiddenClass).text(options.showText);
-            toggleBox.hide();
+            hiddenText.hide();
           } else {
             toggleButton.addClass(options.visibleClass).text(options.hideText);
-            toggleBox.show();
+            moreSymbol.text(' ');
+            hiddenText.show();
           }
           return toggleButton.on('click', function() {
             toggleBox = $(this).siblings('.' + options.toggleBoxClass);
             $(this).toggleClass(options.hiddenClass).toggleClass(options.visibleClass);
-            toggleBox.toggle('slow');
             if ($(this).is('.' + options.hiddenClass)) {
-              return $(this).text(options.showText);
+              $(this).text(options.showText);
+              return toggleBox.animate({
+                height: visibleHeight
+              }, {
+                duration: options.animationTime,
+                complete: function() {
+                  hiddenText.hide();
+                  moreSymbol.text(options.moreSymbol);
+                  return options.onCompleteHide();
+                },
+                easing: options.easing
+              });
             } else {
-              return $(this).text(options.hideText);
+              $(this).text(options.hideText);
+              hiddenText.show();
+              moreSymbol.text(' ');
+              return toggleBox.css('height', visibleHeight).animate({
+                height: textHeight
+              }, {
+                duration: options.animationTime,
+                complete: function() {
+                  return options.onCompleteShow();
+                },
+                easing: options.easing
+              });
             }
           });
         });
