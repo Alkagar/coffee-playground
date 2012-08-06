@@ -2,18 +2,58 @@
 (function() {
 
   window.onload = function() {
-    var circle, director, scene;
-    director = new CAAT.Director().initialize(300, 300);
+    var GameBoard, SpaceShip, bg, director, scene, user;
+    GameBoard = (function() {
+
+      GameBoard.width = 800;
+
+      GameBoard.height = 400;
+
+      function GameBoard() {}
+
+      return GameBoard;
+
+    })();
+    SpaceShip = (function() {
+
+      function SpaceShip(name) {
+        this.name = name;
+        this._actor = new CAAT.Actor().setLocation(20, 20).setSize(30, 30).setFillStyle('#ff5588').setStrokeStyle('#ffffff');
+      }
+
+      SpaceShip.prototype.getActor = function() {
+        var behavior, endPoint, height, movePath, width;
+        width = GameBoard.width;
+        height = Math.random() * (GameBoard.height - 30);
+        this._actor.setLocation(800, height);
+        endPoint = Math.random() * (GameBoard.height - 30);
+        movePath = new CAAT.LinearPath().setInitialPosition(800, height).setFinalPosition(0 - 30, endPoint);
+        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(director.time, 5000);
+        this._actor.addBehavior(behavior);
+        return this._actor;
+      };
+
+      return SpaceShip;
+
+    })();
+    director = new CAAT.Director().initialize(GameBoard.width, GameBoard.height);
+    console.log(director);
     document.getElementById('animation-place').appendChild(director.canvas);
     scene = director.createScene();
-    circle = new CAAT.ShapeActor().setLocation(20, 20).setSize(60, 60).setFillStyle('#ff0000').setStrokeStyle('#000000').enableDrag().setFrameTime(0, 2000).addListener({
-      actorLifeCycleEvent: function(actor, event_type, time) {
-        if (event_type === 'expired') {
-          return actor.setFrameTime(time + 1000, 2000);
-        }
-      }
-    });
-    scene.addChild(circle);
+    user = new CAAT.Actor().setBounds(120, 20, 80, 80).setFillStyle('#ff5500').setStrokeStyle('#000000');
+    user.name = 'UserActor';
+    bg = new CAAT.ActorContainer().setBounds(0, 0, director.width, director.height).setFillStyle('#000');
+    scene.addChild(bg);
+    window.setInterval(function() {
+      var ship;
+      ship = new SpaceShip('ship1');
+      scene.addChild(ship.getActor());
+      ship = new SpaceShip('ship2');
+      scene.addChild(ship.getActor());
+      ship = new SpaceShip('ship3');
+      return scene.addChild(ship.getActor());
+    }, 1500);
+    bg.addChild(user);
     return director.loop(1);
   };
 
