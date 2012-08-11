@@ -18,7 +18,19 @@ window.onload = () ->
             .setBackgroundImage(playerImage.getRef(), true )
             .setScale(0.5, 0.5)
             .enableKeyboardControlsForObject()
+            @.enableCollisions()
             @_scene.addChild(@)
+
+        checkCollisionsWith : (alien) ->
+            if alien.x < (@.x + @.width) and alien.x > @.x and alien.y < (@.y + @.height) and alien.y > @.y
+                console.log('collision')
+
+        enableCollisions : () ->
+            self = @
+            @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+                for alien in Application.aliens
+                    self.checkCollisionsWith alien
+            , null)
 
         enableKeyboardControlsForObject : () ->
             self = @
@@ -67,6 +79,7 @@ window.onload = () ->
 
 
     class Application extends CAAT.Director
+        @aliens : []
         constructor : () ->
             super
             @.initialize(GameBoard.width, GameBoard.height)
@@ -93,17 +106,23 @@ window.onload = () ->
                 self.start()
             )
 
+        insertAliens : () ->
+            ticker = 0
+            @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+                randomTime = Math.round(Math.random() * 100)
+                randomCount = Math.round(Math.random() * 3)
+                ticker += 1
+                if (ticker % randomTime) == 0
+                    aliens = for i in [1..randomCount]
+                        new Alien(@scene)
+                    Application.aliens = Application.aliens.concat aliens
+            , null)
+
         start : () ->
             @getScene()
             @setActorContainer()
             player = new Player(@scene)
-            ticker = 0
-            @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                ticker += 1
-                if (ticker % 100) == 0
-                    alien = new Alien(@scene)
-            , null)
-
+            @.insertAliens()
 
 
             @.loop(10)
@@ -111,7 +130,7 @@ window.onload = () ->
     director = new Application
     director.preloadApplication()
 
-    
+
 
 
 
