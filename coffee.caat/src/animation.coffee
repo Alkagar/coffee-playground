@@ -20,9 +20,9 @@ window.onload = () ->
             .setSize(@width, @height)
             .setFillStyle('#ff5588')
             @_scene.addChild(@)
-            @.enableControls()
+            @.enableKeyboardControls()
 
-        enableControls : () ->
+        enableKeyboardControls : () ->
             self = @
             CAAT.registerKeyListener( (keyEvent) ->
                 if keyEvent.getKeyCode() == CAAT.Keys.UP
@@ -34,15 +34,14 @@ window.onload = () ->
                 if keyEvent.getKeyCode() == CAAT.Keys.RIGHT
                     self.moveVector[1] = if keyEvent.getAction() == 'down' then 1 else 0
             )
-            pixelsPerSecond = 50
-            @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (time, ttime, timerTask) ->
-                ottime = ttime
-                if -1 != prevTime
-                    console.log self.moveVector
-                    #ttime -= ottime #prevTime
-                    self.x += (ttime/10000)*pixelsPerSecond * (self.moveVector[1]-self.moveVector[0])
-                    self.y += (ttime/10000)*pixelsPerSecond * (self.moveVector[3]-self.moveVector[2])
-                prevTime = ottime
+            pixelsPerSecond = 8
+            @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+                self.x +=  pixelsPerSecond * (self.moveVector[1]-self.moveVector[0])
+                self.y +=  pixelsPerSecond * (self.moveVector[3]-self.moveVector[2])
+                if self.x + self.width > GameBoard.width then self.x = GameBoard.width - self.width
+                if self.x < 0 then self.x = 0
+                if self.y + self.height > GameBoard.height then self.y = GameBoard.height - self.height
+                if self.y < 0 then self.y = 0
             , null)
 
 
@@ -65,7 +64,7 @@ window.onload = () ->
             container
 
         start : () ->
-            @.loop(1)
+            @.loop(160)
 
     director = new Application
     director.getScene()
