@@ -1,28 +1,26 @@
 window.onload = () ->
-
     class GameBoard
         @width = 800
         @height = 400
         constructor : () ->
 
     class Player extends CAAT.Actor
-
-        width  : 40
-        height : 40
-        startX : 0
-        startY : 0
-
+        startX     : 0
+        startY     : 0
+        speed      : 8 # pixels per timer tick
         moveVector : [0,0,0,0]
 
         constructor : (@_scene) ->
             super
+            playerImage = new CAAT.SpriteImage().initialize(director.getImage('player'), 1, 1)
             @.setLocation(@startX, @startY)
-            .setSize(@width, @height)
             .setFillStyle('#ff5588')
+            .setBackgroundImage(playerImage.getRef(), true )
+            .setScale(0.5, 0.5)
+            .enableKeyboardControlsForObject()
             @_scene.addChild(@)
-            @.enableKeyboardControls()
 
-        enableKeyboardControls : () ->
+        enableKeyboardControlsForObject : () ->
             self = @
             CAAT.registerKeyListener( (keyEvent) ->
                 if keyEvent.getKeyCode() == CAAT.Keys.UP
@@ -34,16 +32,38 @@ window.onload = () ->
                 if keyEvent.getKeyCode() == CAAT.Keys.RIGHT
                     self.moveVector[1] = if keyEvent.getAction() == 'down' then 1 else 0
             )
-            pixelsPerSecond = 8
             @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                self.x +=  pixelsPerSecond * (self.moveVector[1]-self.moveVector[0])
-                self.y +=  pixelsPerSecond * (self.moveVector[3]-self.moveVector[2])
+                self.x +=  self.speed * (self.moveVector[1]-self.moveVector[0])
+                self.y +=  self.speed * (self.moveVector[3]-self.moveVector[2])
                 if self.x + self.width > GameBoard.width then self.x = GameBoard.width - self.width
                 if self.x < 0 then self.x = 0
                 if self.y + self.height > GameBoard.height then self.y = GameBoard.height - self.height
                 if self.y < 0 then self.y = 0
             , null)
 
+    class Alien extends CAAT.Actor
+        speed      : 8 # pixels per timer tick
+        moveVector : [0,0,0,0]
+
+        constructor : (@_scene) ->
+            super
+            @.setLocation(100, 100)
+            alienImage = new CAAT.SpriteImage().initialize(director.getImage('alien'), 1, 1)
+            @.setBackgroundImage(alienImage.getRef(), true )
+            .setLocation(GameBoard.width + @width, 200)
+            @_scene.addChild(@)
+            @.attack()
+
+        attack : () ->
+            startPoint = Math.random() * (GameBoard.height - @height)
+            endPoint = Math.random() * (GameBoard.height - @height)
+            movePath = new CAAT.LinearPath().
+                setInitialPosition(GameBoard.width, startPoint)
+                .setFinalPosition(-30, endPoint)
+            behavior = new CAAT.PathBehavior()
+                .setPath( movePath )
+                .setFrameTime(director.time ,5000)
+            @.addBehavior( behavior )
 
 
     class Application extends CAAT.Director
@@ -63,15 +83,34 @@ window.onload = () ->
             @scene.addChild(container)
             container
 
+        preloadApplication : () ->
+            self = @
+            new CAAT.ImagePreloader().loadImages( [
+                { id : 'player', url : 'gfx/player.png'},
+                { id : 'alien', url  : 'gfx/alien.png'},
+            ], ( counter, images ) ->
+                self.setImagesCache(images)
+                self.start()
+            )
+
         start : () ->
-            @.loop(160)
+            @getScene()
+            @setActorContainer()
+            player = new Player(@scene)
+            ticker = 0
+            @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+                ticker += 1
+                if (ticker % 100) == 0
+                    alien = new Alien(@scene)
+            , null)
+
+
+
+            @.loop(10)
 
     director = new Application
-    director.getScene()
-    director.setActorContainer()
-    director.start()
+    director.preloadApplication()
 
-    player = new Player(director.scene)
     
 
 
