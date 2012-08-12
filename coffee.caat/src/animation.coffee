@@ -5,6 +5,8 @@ window.onload = () ->
         constructor : () ->
 
     class Player extends CAAT.Actor
+        score      : 0
+        @hp         : 100
         startX     : 0
         startY     : 0
         speed      : 8 # pixels per timer tick
@@ -23,7 +25,8 @@ window.onload = () ->
 
         checkCollisionsWith : (alien) ->
             if alien.x < (@.x + @.width) and alien.x > @.x and alien.y < (@.y + @.height) and alien.y > @.y
-                console.log('collision')
+                alien.destroy()
+                Player.hp = Player.hp - 1
 
         enableCollisions : () ->
             self = @
@@ -56,15 +59,21 @@ window.onload = () ->
     class Alien extends CAAT.Actor
         speed      : 8 # pixels per timer tick
         moveVector : [0,0,0,0]
+        lifeTime   : 5000
 
         constructor : (@_scene) ->
             super
             @.setLocation(100, 100)
+            .setDiscardable(true)
+            .setFrameTime(@_scene.time, @lifeTime)
             alienImage = new CAAT.SpriteImage().initialize(director.getImage('alien'), 1, 1)
             @.setBackgroundImage(alienImage.getRef(), true )
             .setLocation(GameBoard.width + @width, 200)
             @_scene.addChild(@)
             @.attack()
+
+        destroy : () ->
+            @.setFrameTime(0, 0)
 
         attack : () ->
             startPoint = Math.random() * (GameBoard.height - @height)
@@ -74,12 +83,14 @@ window.onload = () ->
                 .setFinalPosition(-30, endPoint)
             behavior = new CAAT.PathBehavior()
                 .setPath( movePath )
-                .setFrameTime(director.time ,5000)
+                .setFrameTime(director.time, @lifeTime)
             @.addBehavior( behavior )
 
-
     class Application extends CAAT.Director
-        @aliens : []
+        playerHpText    : null
+        playerScoreText : null
+        @aliens          : []
+
         constructor : () ->
             super
             @.initialize(GameBoard.width, GameBoard.height)
@@ -88,6 +99,7 @@ window.onload = () ->
 
         getScene : () ->
             @scene = director.createScene()
+            
            
         setActorContainer : () ->
             container = new CAAT.ActorContainer().
@@ -109,8 +121,8 @@ window.onload = () ->
         insertAliens : () ->
             ticker = 0
             @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                randomTime = Math.round(Math.random() * 100)
-                randomCount = Math.round(Math.random() * 3)
+                randomTime = Math.round(Math.random() * 500)
+                randomCount = Math.round(Math.random() * 2)
                 ticker += 1
                 if (ticker % randomTime) == 0
                     aliens = for i in [1..randomCount]
@@ -120,75 +132,45 @@ window.onload = () ->
 
         start : () ->
             @getScene()
+            console.log @scene
             @setActorContainer()
             player = new Player(@scene)
             @.insertAliens()
-
-
+            @scene.addChild(@.getPlayerHpText())
+            @scene.addChild(@.getPlayerScoreText())
+            @.createTextsTimer()
             @.loop(10)
+
+        createTextsTimer : () ->
+            self = @
+            @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+                console.log Player.hp
+                self.playerHpText.setText("HP: #{Player.hp}")
+                self.playerScoreText.setText("SCORE: #{Player.score}")
+            , null)
+
+        getPlayerHpText : () ->
+            if @playerHpText?
+                @playerHpText
+            else
+                @playerHpText = new CAAT.TextActor()
+                .setFont("20px Lucida sans")
+                .setLocation(20, 20)
+                .setOutline(false)
+                .enableEvents(false)
+                .setText('HP: 100')
+
+
+        getPlayerScoreText : () ->
+            if @playerScoreText?
+                @playerScoreText
+            else
+                @playerScoreText = new CAAT.TextActor()
+                .setFont("20px Lucida sans")
+                .setLocation(120, 20)
+                .setOutline(false)
+                .enableEvents(false)
+                .setText('SCORE: 100')
 
     director = new Application
     director.preloadApplication()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    class SpaceShip
-        constructor : (@name) ->
-            @_actor = new CAAT.Actor()
-            .setLocation(20, 20)
-            .setSize(30, 30)
-            .setFillStyle('#ff5588')
-            .setStrokeStyle('#ffffff')
-            .setDiscardable(true)
-        getActor : () ->
-            width = GameBoard.width
-            height = Math.random() * (GameBoard.height - 30)
-            @_actor.setLocation(800, height)
-
-            endPoint = Math.random() * (GameBoard.height - 30)
-            movePath = new CAAT.LinearPath().
-                setInitialPosition(800, height).
-                setFinalPosition(0 - 30, endPoint)
-
-
-            behavior = new CAAT.PathBehavior()
-                .setPath( movePath )
-                .setFrameTime(director.time ,5000)
-
-            @_actor.addBehavior( behavior )
-
-            @_actor
-    keeper = () ->
-        director = new CAAT.Director().initialize(GameBoard.width, GameBoard.height)
-        console.log director
-        document.getElementById('animation-place').appendChild(director.canvas)
-        scene = director.createScene()
-        user = new CAAT.Actor()
-            .setBounds(120, 20, 80, 80)
-            .setFillStyle('#ff5500')
-            .setStrokeStyle('#000000')
-        user.name = 'UserActor'
-            
-
-
-        window.setInterval(() ->
-            #ship = new SpaceShip('ship1')
-            #scene.addChild(ship.getActor())
-            #ship = new SpaceShip('ship2')
-            #scene.addChild(ship.getActor())
-            #ship = new SpaceShip('ship3')
-            #scene.addChild(ship.getActor())
-        1500)
-
