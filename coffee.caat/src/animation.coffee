@@ -1,16 +1,19 @@
 window.onload = () ->
+    
     class GameBoard
         @width = 800
         @height = 400
         constructor : () ->
 
     class Player extends CAAT.Actor
-        score      : 0
-        @hp         : 100
+        @bullets   : []
+        @score      : 0
+        @hp        : 100
         startX     : 0
         startY     : 0
         speed      : 8 # pixels per timer tick
         moveVector : [0,0,0,0]
+        bulletsShot : 0
 
         constructor : (@_scene) ->
             super
@@ -26,13 +29,19 @@ window.onload = () ->
         checkCollisionsWith : (alien) ->
             if alien.x < (@.x + @.width) and alien.x > @.x and alien.y < (@.y + @.height) and alien.y > @.y
                 alien.destroy()
-                Player.hp = Player.hp - 1
+                Player.hp = Player.hp - alien.attackPower
+                if Player.hp <= 0
+                    alert('Game Over')
+                    location.reload()
+
 
         enableCollisions : () ->
             self = @
             @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
                 for alien in Application.aliens
                     self.checkCollisionsWith alien
+                    for bullet in Player.bullets
+                        alien.checkCollisionsWith bullet
             , null)
 
         enableKeyboardControlsForObject : () ->
@@ -46,20 +55,55 @@ window.onload = () ->
                     self.moveVector[0] = if keyEvent.getAction() == 'down' then 1 else 0
                 if keyEvent.getKeyCode() == CAAT.Keys.RIGHT
                     self.moveVector[1] = if keyEvent.getAction() == 'down' then 1 else 0
+                if keyEvent.getKeyCode() == CAAT.Keys.a
+                    self.bulletsShot = 1
             )
-            @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
+            ms = 0
+            @_scene.createTimer(@_scene.time, 1, (sceneTime, timerTime, taskObject) ->
+
+                ms+=1
+                taskObject.reset(sceneTime)
+
                 self.x +=  self.speed * (self.moveVector[1]-self.moveVector[0])
                 self.y +=  self.speed * (self.moveVector[3]-self.moveVector[2])
                 if self.x + self.width > GameBoard.width then self.x = GameBoard.width - self.width
                 if self.x < 0 then self.x = 0
                 if self.y + self.height > GameBoard.height then self.y = GameBoard.height - self.height
                 if self.y < 0 then self.y = 0
-            , null)
+                if ms % 20 == 0 and self.bulletsShot > 0
+                    self.fireGun()
+                    self.bulletsShot = 0
+            , null, null)
+
+        fireGun : () ->
+            bullet = new CAAT.ShapeActor()
+            .setShape( CAAT.ShapeActor.prototype.SHAPE_CIRCLE )
+            .setSize(5, 5)
+            .setFillStyle( 'yellow' )
+
+            startPointX = @.x + @.width / 2
+            startPointY = @.y + @.height / 2
+            
+            movePath = new CAAT.LinearPath()
+            .setInitialPosition(startPointX, startPointY)
+            .setFinalPosition(startPointX + GameBoard.width, startPointY)
+            behavior = new CAAT.PathBehavior()
+            .setPath( movePath )
+            .setFrameTime(director.time, 4000)
+            bullet.addBehavior( behavior )
+            bullets = [bullet]
+            Player.bullets = Player.bullets.concat bullets
+
+            @_scene.addChild(bullet)
+
+
+
 
     class Alien extends CAAT.Actor
-        speed      : 8 # pixels per timer tick
-        moveVector : [0,0,0,0]
-        lifeTime   : 5000
+        speed       : 8 # pixels per timer tick
+        attackPower : 5
+        moveVector  : [0,0,0,0]
+        lifeTime    : 5000
 
         constructor : (@_scene) ->
             super
@@ -72,8 +116,16 @@ window.onload = () ->
             @_scene.addChild(@)
             @.attack()
 
+        checkCollisionsWith : (bullet) ->
+            if bullet.x < (@.x + @.width) and bullet.x > @.x and bullet.y < (@.y + @.height) and bullet.y > @.y
+                @.destroy()
+                bullet.setFrameTime(0, 0)
+                .setLocation(-100, -100)
+                Player.score = Player.score + 1
+
         destroy : () ->
             @.setFrameTime(0, 0)
+            .setLocation(-100, -100)
 
         attack : () ->
             startPoint = Math.random() * (GameBoard.height - @height)
@@ -94,7 +146,6 @@ window.onload = () ->
         constructor : () ->
             super
             @.initialize(GameBoard.width, GameBoard.height)
-            console.log @
             document.getElementById('animation-place').appendChild(@canvas)
 
         getScene : () ->
@@ -102,11 +153,11 @@ window.onload = () ->
             
            
         setActorContainer : () ->
-            container = new CAAT.ActorContainer().
+            @container = new CAAT.ActorContainer().
                 setBounds(0,0, @width, @height).
                 setFillStyle('#000')
-            @scene.addChild(container)
-            container
+            @scene.addChild(@container)
+            @container
 
         preloadApplication : () ->
             self = @
@@ -131,46 +182,41 @@ window.onload = () ->
             , null)
 
         start : () ->
+            CAAT.loop(60)
             @getScene()
-            console.log @scene
             @setActorContainer()
             player = new Player(@scene)
             @.insertAliens()
-            @scene.addChild(@.getPlayerHpText())
-            @scene.addChild(@.getPlayerScoreText())
-            @.createTextsTimer()
-            @.loop(10)
+            @.setPlayerHpText()
+            @.setPlayerScoreText()
+            @scene.addChild(@playerHpText)
+            @scene.addChild(@playerScoreText)
+            @.createTextsTimer(@playerHpText, @playerScoreText)
 
-        createTextsTimer : () ->
+        createTextsTimer : (hp, score) ->
             self = @
             @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                console.log Player.hp
-                self.playerHpText.setText("HP: #{Player.hp}")
-                self.playerScoreText.setText("SCORE: #{Player.score}")
+                console.log self.playerHpText.text
+
+                hp.setText("HP: #{Player.hp}")
+                score.setText("SCORE: #{Player.score}")
             , null)
 
-        getPlayerHpText : () ->
-            if @playerHpText?
-                @playerHpText
-            else
-                @playerHpText = new CAAT.TextActor()
+        setPlayerHpText : () ->
+            @playerHpText = new CAAT.TextActor()
                 .setFont("20px Lucida sans")
                 .setLocation(20, 20)
                 .setOutline(false)
-                .enableEvents(false)
+                .enableEvents(true)
                 .setText('HP: 100')
 
-
-        getPlayerScoreText : () ->
-            if @playerScoreText?
-                @playerScoreText
-            else
-                @playerScoreText = new CAAT.TextActor()
+        setPlayerScoreText : () ->
+            @playerScoreText = new CAAT.TextActor()
                 .setFont("20px Lucida sans")
                 .setLocation(120, 20)
                 .setOutline(false)
                 .enableEvents(false)
-                .setText('SCORE: 100')
+                .setText('SCORE: 0')
 
     director = new Application
     director.preloadApplication()
