@@ -1,8 +1,8 @@
 window.onload = () ->
     
     class GameBoard
-        @width = 800
-        @height = 400
+        @width = 900
+        @height = 600
         constructor : () ->
 
     class Player extends CAAT.Actor
@@ -89,15 +89,12 @@ window.onload = () ->
             .setFinalPosition(startPointX + GameBoard.width, startPointY)
             behavior = new CAAT.PathBehavior()
             .setPath( movePath )
-            .setFrameTime(director.time, 4000)
+            .setFrameTime(@_scene.time, 4000)
             bullet.addBehavior( behavior )
             bullets = [bullet]
             Player.bullets = Player.bullets.concat bullets
 
             @_scene.addChild(bullet)
-
-
-
 
     class Alien extends CAAT.Actor
         speed       : 8 # pixels per timer tick
@@ -182,9 +179,26 @@ window.onload = () ->
             , null)
 
         start : () ->
+            self = @
             CAAT.loop(60)
             @getScene()
             @setActorContainer()
+            startG = new CAAT.TextActor()
+            @scene.addChild(startG)
+            startG.setFont("20px Lucida sans")
+                .setLocation(GameBoard.width / 2, GameBoard.height / 2)
+                .setOutline(false)
+                .enableEvents(true)
+                .setText('Start Game')
+                .mouseClick = (mouseEvent) ->
+                    self.startGame()
+
+
+        startGame : () ->
+            @getScene()
+            ind = @.getSceneIndex(@scene)
+            @setActorContainer()
+            @.easeIn(ind)
             player = new Player(@scene)
             @.insertAliens()
             @.setPlayerHpText()
