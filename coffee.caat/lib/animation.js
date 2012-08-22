@@ -41,7 +41,7 @@
         this._scene = _scene;
         Player.__super__.constructor.apply(this, arguments);
         playerImage = new CAAT.SpriteImage().initialize(director.getImage('player'), 1, 1);
-        this.setLocation(this.startX, this.startY).setFillStyle('#ff5588').setBackgroundImage(playerImage.getRef(), true).setScale(0.5, 0.5).enableKeyboardControlsForObject();
+        this.setLocation(this.startX, this.startY).setFillStyle('#ff5588').setBackgroundImage(playerImage.getRef(), true).enableKeyboardControlsForObject();
         this.enableCollisions();
         this._scene.addChild(this);
       }

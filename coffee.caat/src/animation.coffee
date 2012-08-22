@@ -21,7 +21,6 @@ window.onload = () ->
             @.setLocation(@startX, @startY)
             .setFillStyle('#ff5588')
             .setBackgroundImage(playerImage.getRef(), true )
-            .setScale(0.5, 0.5)
             .enableKeyboardControlsForObject()
             @.enableCollisions()
             @_scene.addChild(@)
