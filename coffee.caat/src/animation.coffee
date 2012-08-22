@@ -132,7 +132,7 @@ window.onload = () ->
                 .setFinalPosition(-30, endPoint)
             behavior = new CAAT.PathBehavior()
                 .setPath( movePath )
-                .setFrameTime(director.time, @lifeTime)
+                .setFrameTime(@_scene.time, @lifeTime)
             @.addBehavior( behavior )
 
     class Application extends CAAT.Director

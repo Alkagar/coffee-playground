@@ -183,7 +183,7 @@
         startPoint = Math.random() * (GameBoard.height - this.height);
         endPoint = Math.random() * (GameBoard.height - this.height);
         movePath = new CAAT.LinearPath().setInitialPosition(GameBoard.width, startPoint).setFinalPosition(-30, endPoint);
-        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(director.time, this.lifeTime);
+        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(this._scene.time, this.lifeTime);
         return this.addBehavior(behavior);
       };
 
