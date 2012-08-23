@@ -1,4 +1,4 @@
-body { background-color:#000000; text-align:center; font-family: 'Quantico', sans-serif;}
+body { background-color:#000000; text-align:center; font-family: 'Quantico', sans-serif; color:#FFFFFF; font-size:12px; }
 #page { width:900px; margin-left:auto; margin-right:auto; }
 h2 { color:#FF6600; }
 a { color:#FF6600; text-decoration:none; }
