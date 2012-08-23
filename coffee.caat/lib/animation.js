@@ -260,9 +260,10 @@
         var ticker;
         ticker = 0;
         return this.scene.createTimer(this.scene.time, Number.MAX_VALUE, null, function(sceneTime, timerTime, taskObject) {
-          var aliens, i, randomCount, randomTime;
-          randomTime = Math.round(Math.random() * 500);
-          randomCount = Math.round(Math.random() * 2);
+          var aliens, i, maxAlienInAttack, randomCount, randomTime;
+          randomTime = Math.round(Math.random() * 300);
+          maxAlienInAttack = Math.ceil(Player.score / 40 + 0.1);
+          randomCount = Math.round(Math.random() * maxAlienInAttack);
           ticker += 1;
           if ((ticker % randomTime) === 0) {
             aliens = (function() {

@@ -157,6 +157,7 @@ window.onload = () ->
         getScene : () ->
             @scene = director.createScene()
             
+           
         setActorContainer : () ->
             @container = new CAAT.ActorContainer().
                 setBounds(0,0, @width, @height).
@@ -177,8 +178,9 @@ window.onload = () ->
         insertAliens : () ->
             ticker = 0
             @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                randomTime = Math.round(Math.random() * 500)
-                randomCount = Math.round(Math.random() * 2)
+                randomTime = Math.round(Math.random() * 300)
+                maxAlienInAttack = Math.ceil(Player.score / 40 + 0.1)
+                randomCount = Math.round(Math.random() * maxAlienInAttack)
                 ticker += 1
                 if (ticker % randomTime) == 0
                     aliens = for i in [1..randomCount]
