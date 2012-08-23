@@ -33,7 +33,6 @@ window.onload = () ->
                     alert('Game Over')
                     location.reload()
 
-
         enableCollisions : () ->
             self = @
             @_scene.createTimer(@_scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
@@ -75,31 +74,42 @@ window.onload = () ->
             , null, null)
 
         fireGun : () ->
-            bullet = new CAAT.ShapeActor()
-            .setShape( CAAT.ShapeActor.prototype.SHAPE_CIRCLE )
-            .setSize(5, 5)
-            .setFillStyle( 'yellow' )
-
-            startPointX = @.x + @.width / 2
-            startPointY = @.y + @.height / 2
-            
-            movePath = new CAAT.LinearPath()
-            .setInitialPosition(startPointX, startPointY)
-            .setFinalPosition(startPointX + GameBoard.width, startPointY)
-            behavior = new CAAT.PathBehavior()
-            .setPath( movePath )
-            .setFrameTime(@_scene.time, 4000)
-            bullet.addBehavior( behavior )
+            bullet = new NormalBullet(@_scene, @)
             bullets = [bullet]
             Player.bullets = Player.bullets.concat bullets
 
-            @_scene.addChild(bullet)
+
+    class NormalBullet extends CAAT.ShapeActor
+        constructor : (@_scene, player) ->
+            super
+            @.setShape( CAAT.ShapeActor.prototype.SHAPE_CIRCLE )
+            .setSize(5, 5)
+            .setFillStyle( 'yellow' )
+
+            startPointX = player.x + player.width / 2
+            startPointY = player.y + player.height / 2
+            
+            movePath = new CAAT.LinearPath()
+                .setInitialPosition(startPointX, startPointY)
+                .setFinalPosition(startPointX + GameBoard.width, startPointY)
+            behavior = new CAAT.PathBehavior()
+                .setPath( movePath )
+                .setFrameTime(@_scene.time, 2000)
+            @.addBehavior( behavior )
+            @_scene.addChild(@)
+
+        destroy : () ->
+            @.setFrameTime(0, 0)
+            .setLocation(-100, -100)
+
 
     class Alien extends CAAT.Actor
-        speed       : 8 # pixels per timer tick
+        speedMax    : 2
+        speedMin    : 1
         attackPower : 5
         moveVector  : [0,0,0,0]
         lifeTime    : 5000
+        value       : 1
 
         constructor : (@_scene) ->
             super
@@ -115,9 +125,8 @@ window.onload = () ->
         checkCollisionsWith : (bullet) ->
             if bullet.x < (@.x + @.width) and bullet.x > @.x and bullet.y < (@.y + @.height) and bullet.y > @.y
                 @.destroy()
-                bullet.setFrameTime(0, 0)
-                .setLocation(-100, -100)
-                Player.score = Player.score + 1
+                bullet.destroy()
+                Player.score = Player.score + @value
 
         destroy : () ->
             @.setFrameTime(0, 0)
@@ -128,10 +137,11 @@ window.onload = () ->
             endPoint = Math.random() * (GameBoard.height - @height)
             movePath = new CAAT.LinearPath().
                 setInitialPosition(GameBoard.width, startPoint)
-                .setFinalPosition(-30, endPoint)
+                .setFinalPosition(-50, endPoint)
+            speed = Math.random() * @speedMax + @speedMin
             behavior = new CAAT.PathBehavior()
                 .setPath( movePath )
-                .setFrameTime(@_scene.time, @lifeTime)
+                .setFrameTime(@_scene.time, @lifeTime / speed)
             @.addBehavior( behavior )
 
     class Application extends CAAT.Director
@@ -147,7 +157,6 @@ window.onload = () ->
         getScene : () ->
             @scene = director.createScene()
             
-           
         setActorContainer : () ->
             @container = new CAAT.ActorContainer().
                 setBounds(0,0, @width, @height).
@@ -184,7 +193,7 @@ window.onload = () ->
             @setActorContainer()
             startG = new CAAT.TextActor()
             @scene.addChild(startG)
-            startG.setFont("20px Lucida sans")
+            startG.setFont("20px Quantico")
                 .setLocation(GameBoard.width / 2, GameBoard.height / 2)
                 .setOutline(false)
                 .enableEvents(true)
@@ -209,15 +218,13 @@ window.onload = () ->
         createTextsTimer : (hp, score) ->
             self = @
             @scene.createTimer(@scene.time, Number.MAX_VALUE, null, (sceneTime, timerTime, taskObject) ->
-                console.log self.playerHpText.text
-
                 hp.setText("HP: #{Player.hp}")
                 score.setText("SCORE: #{Player.score}")
             , null)
 
         setPlayerHpText : () ->
             @playerHpText = new CAAT.TextActor()
-                .setFont("20px Lucida sans")
+                .setFont("20px Quantico")
                 .setLocation(20, 20)
                 .setOutline(false)
                 .enableEvents(true)
@@ -225,7 +232,7 @@ window.onload = () ->
 
         setPlayerScoreText : () ->
             @playerScoreText = new CAAT.TextActor()
-                .setFont("20px Lucida sans")
+                .setFont("20px Quantico")
                 .setLocation(120, 20)
                 .setOutline(false)
                 .enableEvents(false)

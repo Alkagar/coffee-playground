@@ -4,7 +4,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   window.onload = function() {
-    var Alien, Application, GameBoard, Player, director;
+    var Alien, Application, GameBoard, NormalBullet, Player, director;
     GameBoard = (function() {
 
       GameBoard.width = 900;
@@ -128,32 +128,54 @@
       };
 
       Player.prototype.fireGun = function() {
-        var behavior, bullet, bullets, movePath, startPointX, startPointY;
-        bullet = new CAAT.ShapeActor().setShape(CAAT.ShapeActor.prototype.SHAPE_CIRCLE).setSize(5, 5).setFillStyle('yellow');
-        startPointX = this.x + this.width / 2;
-        startPointY = this.y + this.height / 2;
-        movePath = new CAAT.LinearPath().setInitialPosition(startPointX, startPointY).setFinalPosition(startPointX + GameBoard.width, startPointY);
-        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(this._scene.time, 4000);
-        bullet.addBehavior(behavior);
+        var bullet, bullets;
+        bullet = new NormalBullet(this._scene, this);
         bullets = [bullet];
-        Player.bullets = Player.bullets.concat(bullets);
-        return this._scene.addChild(bullet);
+        return Player.bullets = Player.bullets.concat(bullets);
       };
 
       return Player;
 
     })(CAAT.Actor);
+    NormalBullet = (function(_super) {
+
+      __extends(NormalBullet, _super);
+
+      function NormalBullet(_scene, player) {
+        var behavior, movePath, startPointX, startPointY;
+        this._scene = _scene;
+        NormalBullet.__super__.constructor.apply(this, arguments);
+        this.setShape(CAAT.ShapeActor.prototype.SHAPE_CIRCLE).setSize(5, 5).setFillStyle('yellow');
+        startPointX = player.x + player.width / 2;
+        startPointY = player.y + player.height / 2;
+        movePath = new CAAT.LinearPath().setInitialPosition(startPointX, startPointY).setFinalPosition(startPointX + GameBoard.width, startPointY);
+        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(this._scene.time, 2000);
+        this.addBehavior(behavior);
+        this._scene.addChild(this);
+      }
+
+      NormalBullet.prototype.destroy = function() {
+        return this.setFrameTime(0, 0).setLocation(-100, -100);
+      };
+
+      return NormalBullet;
+
+    })(CAAT.ShapeActor);
     Alien = (function(_super) {
 
       __extends(Alien, _super);
 
-      Alien.prototype.speed = 8;
+      Alien.prototype.speedMax = 2;
+
+      Alien.prototype.speedMin = 1;
 
       Alien.prototype.attackPower = 5;
 
       Alien.prototype.moveVector = [0, 0, 0, 0];
 
       Alien.prototype.lifeTime = 5000;
+
+      Alien.prototype.value = 1;
 
       function Alien(_scene) {
         var alienImage;
@@ -169,8 +191,8 @@
       Alien.prototype.checkCollisionsWith = function(bullet) {
         if (bullet.x < (this.x + this.width) && bullet.x > this.x && bullet.y < (this.y + this.height) && bullet.y > this.y) {
           this.destroy();
-          bullet.setFrameTime(0, 0).setLocation(-100, -100);
-          return Player.score = Player.score + 1;
+          bullet.destroy();
+          return Player.score = Player.score + this.value;
         }
       };
 
@@ -179,11 +201,12 @@
       };
 
       Alien.prototype.attack = function() {
-        var behavior, endPoint, movePath, startPoint;
+        var behavior, endPoint, movePath, speed, startPoint;
         startPoint = Math.random() * (GameBoard.height - this.height);
         endPoint = Math.random() * (GameBoard.height - this.height);
-        movePath = new CAAT.LinearPath().setInitialPosition(GameBoard.width, startPoint).setFinalPosition(-30, endPoint);
-        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(this._scene.time, this.lifeTime);
+        movePath = new CAAT.LinearPath().setInitialPosition(GameBoard.width, startPoint).setFinalPosition(-50, endPoint);
+        speed = Math.random() * this.speedMax + this.speedMin;
+        behavior = new CAAT.PathBehavior().setPath(movePath).setFrameTime(this._scene.time, this.lifeTime / speed);
         return this.addBehavior(behavior);
       };
 
@@ -263,7 +286,7 @@
         this.setActorContainer();
         startG = new CAAT.TextActor();
         this.scene.addChild(startG);
-        return startG.setFont("20px Lucida sans").setLocation(GameBoard.width / 2, GameBoard.height / 2).setOutline(false).enableEvents(true).setText('Start Game').mouseClick = function(mouseEvent) {
+        return startG.setFont("20px Quantico").setLocation(GameBoard.width / 2, GameBoard.height / 2).setOutline(false).enableEvents(true).setText('Start Game').mouseClick = function(mouseEvent) {
           return self.startGame();
         };
       };
@@ -287,18 +310,17 @@
         var self;
         self = this;
         return this.scene.createTimer(this.scene.time, Number.MAX_VALUE, null, function(sceneTime, timerTime, taskObject) {
-          console.log(self.playerHpText.text);
           hp.setText("HP: " + Player.hp);
           return score.setText("SCORE: " + Player.score);
         }, null);
       };
 
       Application.prototype.setPlayerHpText = function() {
-        return this.playerHpText = new CAAT.TextActor().setFont("20px Lucida sans").setLocation(20, 20).setOutline(false).enableEvents(true).setText('HP: 100');
+        return this.playerHpText = new CAAT.TextActor().setFont("20px Quantico").setLocation(20, 20).setOutline(false).enableEvents(true).setText('HP: 100');
       };
 
       Application.prototype.setPlayerScoreText = function() {
-        return this.playerScoreText = new CAAT.TextActor().setFont("20px Lucida sans").setLocation(120, 20).setOutline(false).enableEvents(false).setText('SCORE: 0');
+        return this.playerScoreText = new CAAT.TextActor().setFont("20px Quantico").setLocation(120, 20).setOutline(false).enableEvents(false).setText('SCORE: 0');
       };
 
       return Application;
